@@ -1,2 +1,2 @@
-# barcode-detector
-Detects barcodes on documents and encodes it by using ZXing library.
+# Barcode Detector
+Detects barcodes on different types of documents (PDF, PNG, TIFF and JPEG) and encodes it by using the ZXing library.
