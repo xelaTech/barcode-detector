@@ -1,2 +1,2 @@
 # Barcode Detector
-Detects 1D and 2D barcodes on different types of documents (PDF, PNG, TIFF and JPEG) and encodes them by using the ZXing library.
+Detects barcodes and qrcodes on different types of documents (PDF, PNG, TIFF and JPEG) and decodes them by using the ZXing library.
