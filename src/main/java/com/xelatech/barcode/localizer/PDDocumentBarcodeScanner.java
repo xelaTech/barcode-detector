@@ -334,7 +334,7 @@ public class PDDocumentBarcodeScanner {
 					false);
 
 			ImageIO.write(out, "png",
-					new File(PDPageBarcodeScanner.WS_PATH + "/test_4_img_" + imageCounter++ + "." + "png"));
+					new File(PDPageBarcodeScanner.WS_PATH + "/test_4_img_" + (imageCounter++) + "." + "png"));
 
 			return areas;
 		}
@@ -347,7 +347,6 @@ public class PDDocumentBarcodeScanner {
 			// File(PdPageBarcodeScanner.WS_PATH + "/test_3_bw-img.png"));
 
 			final List<Rectangle> areaList = getAreaList(blackAndWhiteImage, maximumBlankPixelDelimiterCount);
-
 			for (final Rectangle rectangle : areaList) {
 				// Verify bounds before crop image
 				if (rectangle.x < 0) {
@@ -371,57 +370,68 @@ public class PDDocumentBarcodeScanner {
 						image.getSubimage(rectangle.x, rectangle.y, rectangle.width, rectangle.height),
 						BufferedImage.TYPE_INT_ARGB);
 
-				// ImageIO.write(croppedImage, "png", new File(PdPageBarcodeScanner.WS_PATH +
-				// "/test_4_sub-img_"
-				// + (PdPageBarcodeScanner.imageCounter - 1) + "_" +
-				// PdPageBarcodeScanner.subImageCounter++ + "." + "png"));
+				final String imgFileName = "test_4_sub-img_" + (imageCounter - 1) + "_" + (subImageCounter++);
+				final String imgPath = PDPageBarcodeScanner.WS_PATH + File.pathSeparator + imgFileName;
+				ImageIO.write(croppedImage, "png", new File(imgPath + ".png"));
 
-				// for(int d = 0; d < 360; d += 2)
-				// {
-				// Result[] barcodes =
-				// PDPageBarcodeScanner.extractBarcode(PDPageBarcodeScanner.rotateImage(croppedImage,
-				// d));
-				// if(barcodes != null)
-				// {
-				// this.addResults(barcodes);
-				//
-				// System.out.println("Found " + barcodes.length + " barcode(s) @ " + d + "
-				// degree.");
-				//
-				// break;
-				// }
-				// }
+				for (int d = 0; d < 360; d += 2) {
+					final BufferedImage rotatedImg = rotateImage(croppedImage, d);
+					Result[] barcodes = extractBarcode(rotatedImg);
+					if (barcodes != null) {
+						this.addResults(barcodes);
 
+						ImageDisplay.showImageFrame(rotatedImg, imgFileName + " @ " + d + "degree");
+
+						System.out.println(
+								"Found " + barcodes.length + " barcode(s) @ " + d + " degrees on " + imgPath + ".png");
+
+						break;
+					}
+				}
+
+				Result[] result;
 				// ZXing library can not deal with DataMatrix in all orientations, so we have to
-				// rotate the image and ask ZXing
-				// four times to find DataMatrix.
-				this.addResults(extractBarcode(croppedImage));
-				this.addResults(extractBarcode(rotate90ToLeftImage(croppedImage, BufferedImage.TYPE_INT_ARGB)));
-				this.addResults(extractBarcode(rotate90ToRightImage(croppedImage, BufferedImage.TYPE_INT_ARGB)));
-				this.addResults(extractBarcode(rotate180Image(croppedImage, BufferedImage.TYPE_INT_ARGB)));
+				// rotate the image and ask ZXing four times to find DataMatrix.
+				result = extractBarcode(croppedImage);
+				if (result != null) {
+					this.addResults(result);
+				} else {
+					result = extractBarcode(rotate90ToLeftImage(croppedImage, BufferedImage.TYPE_INT_ARGB));
+					if (result != null) {
+						this.addResults(result);
+					} else {
+						result = extractBarcode(rotate90ToRightImage(croppedImage, BufferedImage.TYPE_INT_ARGB));
+						if (result != null) {
+							this.addResults(result);
+						} else {
+							result = extractBarcode(rotate180Image(croppedImage, BufferedImage.TYPE_INT_ARGB));
+							if (result != null) {
+								this.addResults(result);
+							}
+						}
+					}
+				}
 
-				// for(int d = 0; d < 360; d += 2)
-				// {
-				// Result[] barcodes =
-				// this.extractMultipleBarcode(PdPageBarcodeScanner.rotateImage(croppedImage,
-				// d));
-				// if(barcodes != null)
-				// {
-				// this.addResults(barcodes);
-				//
-				// System.out.println("Found " + barcodes.length + " barcode(s) @ " + d + "
-				// degree.");
-				//
-				// break;
-				// }
-				// }
-
-				this.addResults(this.extractMultipleBarcode(croppedImage));
-				this.addResults(
-						this.extractMultipleBarcode(rotate90ToLeftImage(croppedImage, BufferedImage.TYPE_INT_ARGB)));
-				this.addResults(
-						this.extractMultipleBarcode(rotate90ToRightImage(croppedImage, BufferedImage.TYPE_INT_ARGB)));
-				this.addResults(this.extractMultipleBarcode(rotate180Image(croppedImage, BufferedImage.TYPE_INT_ARGB)));
+//				result = extractMultipleBarcode(croppedImage);
+//				if (result != null) {
+//					this.addResults(result);
+//				} else {
+//					result = extractMultipleBarcode(rotate90ToLeftImage(croppedImage, BufferedImage.TYPE_INT_ARGB));
+//					if (result != null) {
+//						this.addResults(result);
+//					} else {
+//						result = extractMultipleBarcode(
+//								rotate90ToRightImage(croppedImage, BufferedImage.TYPE_INT_ARGB));
+//						if (result != null) {
+//							this.addResults(result);
+//						} else {
+//							result = extractMultipleBarcode(rotate180Image(croppedImage, BufferedImage.TYPE_INT_ARGB));
+//							if (result != null) {
+//								this.addResults(result);
+//							}
+//						}
+//					}
+//				}
 			}
 		}
 
@@ -543,9 +553,10 @@ public class PDDocumentBarcodeScanner {
 			// Translate the object so that you rotate it around the center.
 			at.translate(-inputImage.getWidth() / 2, -inputImage.getHeight() / 2);
 
-			BufferedImage copy = copyImage(inputImage, BufferedImage.TYPE_INT_ARGB);
+			final BufferedImage copy = new BufferedImage(inputImage.getWidth(), inputImage.getHeight(),
+					BufferedImage.TYPE_INT_ARGB);
 			final Graphics2D g = copy.createGraphics();
-			g.drawRenderedImage(copy, at);
+			g.drawRenderedImage(inputImage, at);
 			g.dispose();
 
 			return copy;
